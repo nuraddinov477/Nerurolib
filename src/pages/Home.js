@@ -13,7 +13,6 @@ const CAT_EMOJIS = {
   'Романтика': '💕', 'Детективы': '🔍', 'Фантастика': '🚀',
 };
 
-const PARTNERS = [];
 
 const COVER_COLORS = [
   '#e8f4fd','#fef9e7','#eafaf1','#fdf2f8','#f4ecf7',

@@ -5,7 +5,7 @@ import { LanguageContext } from '../context/LanguageContext';
 import '../styles/Cart.css';
 
 function Cart() {
-  const { cart, removeFromCart, updateCartQuantity, calculateTotal, checkout } = useContext(DataContext);
+  const { cart, removeFromCart, updateCartQuantity, checkout } = useContext(DataContext);
   const { t } = useContext(LanguageContext);
 
   return (

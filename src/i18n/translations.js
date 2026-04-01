@@ -66,7 +66,6 @@ export const translations = {
     actions: "Harakatlar",
     status: "Holati",
     noOrders: "Buyurtmalar yo'q",
-    status: "Holati",
     date: "Sana",
     items: "Mahsulotlar",
     pending: "Kutish",
