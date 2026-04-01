@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="YouTube">
+  <rect width="240" height="240" rx="28" fill="#ff0000"/>
+  <path d="M74 74c-6 2-10 8-10 14v64c0 6 4 12 10 14 12 4 84 4 96 0 6-2 10-8 10-14V88c0-6-4-12-10-14-12-4-84-4-96 0z" fill="#ff0000" opacity="0.0"/>
+  <polygon points="100,82 170,120 100,158" fill="#fff"/>
+</svg>

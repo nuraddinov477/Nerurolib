@@ -1,0 +1,969 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs').promises;
+const sqlite3 = require('sqlite3').verbose();
+const { open } = require('sqlite');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+// Gemini AI setup
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+const app = express();
+const PORT = process.env.NODE_PORT || 3001;
+
+// Middleware
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token']
+}));
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Admin password
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+// Database setup
+let db;
+
+async function initDatabase() {
+  db = await open({
+    filename: './books.db',
+    driver: sqlite3.Database
+  });
+
+  // Create tables
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      full_name TEXT,
+      is_admin INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS books (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      author TEXT NOT NULL,
+      category TEXT NOT NULL,
+      price REAL DEFAULT 0,
+      cover TEXT DEFAULT '📕',
+      description TEXT,
+      stock INTEGER DEFAULT 0,
+      rating REAL DEFAULT 0,
+      pdf_data BLOB,
+      pdf_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      total_amount REAL DEFAULT 0,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      book_id INTEGER NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      price REAL NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (book_id) REFERENCES books(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      session_id TEXT NOT NULL,
+      ip_address TEXT,
+      user_agent TEXT,
+      device_type TEXT,
+      browser TEXT,
+      os TEXT,
+      country TEXT,
+      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      ended_at DATETIME,
+      is_active INTEGER DEFAULT 1,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS page_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      user_id INTEGER,
+      page_url TEXT NOT NULL,
+      page_title TEXT,
+      referrer TEXT,
+      time_spent INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS book_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      book_id INTEGER NOT NULL,
+      user_id INTEGER,
+      session_id TEXT NOT NULL,
+      pages_read INTEGER DEFAULT 0,
+      time_spent INTEGER DEFAULT 0,
+      completed INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (book_id) REFERENCES books(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `);
+
+  const bookColumns = await db.all(`PRAGMA table_info(books)`);
+  if (!bookColumns.some(col => col.name === 'pdf_url')) {
+    await db.exec(`ALTER TABLE books ADD COLUMN pdf_url TEXT`);
+  }
+
+  // Add sample data if empty
+  const bookCount = await db.get('SELECT COUNT(*) as count FROM books');
+  if (bookCount.count === 0) {
+    // Add categories
+    const categories = ['Fiction', 'Non-Fiction', 'Science', 'History', 'Biography'];
+    for (const cat of categories) {
+      await db.run('INSERT OR IGNORE INTO categories (name) VALUES (?)', cat);
+    }
+
+    // Add sample books
+    const sampleBooks = [
+      {
+        title: 'The Great Gatsby',
+        author: 'F. Scott Fitzgerald',
+        category: 'Fiction',
+        price: 12.99,
+        cover: '📕',
+        description: 'A classic American novel set in the Jazz Age.',
+        stock: 10
+      },
+      {
+        title: 'To Kill a Mockingbird',
+        author: 'Harper Lee',
+        category: 'Fiction',
+        price: 14.99,
+        cover: '📗',
+        description: 'A gripping tale of racial injustice and childhood innocence.',
+        stock: 8
+      },
+      {
+        title: 'Sapiens',
+        author: 'Yuval Noah Harari',
+        category: 'Non-Fiction',
+        price: 18.99,
+        cover: '📘',
+        description: 'A brief history of humankind.',
+        stock: 15
+      }
+    ];
+
+    for (const book of sampleBooks) {
+      await db.run(
+        'INSERT INTO books (title, author, category, price, cover, description, stock) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [book.title, book.author, book.category, book.price, book.cover, book.description, book.stock]
+      );
+    }
+
+    // Add admin user
+    await db.run(
+      'INSERT OR IGNORE INTO users (username, email, password, full_name, is_admin) VALUES (?, ?, ?, ?, ?)',
+      ['admin', 'admin@example.com', 'admin123', 'Administrator', 1]
+    );
+  }
+
+  console.log('Database initialized successfully');
+}
+
+// Middleware to check admin authentication
+function requiresAdmin(req, res, next) {
+  const token = req.headers['x-admin-token'] || req.query.admin_token;
+  if (!token || token !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Node.js server is running' });
+});
+
+// Books Routes
+app.get('/api/books', async (req, res) => {
+  try {
+    const books = await db.all('SELECT * FROM books');
+    const booksWithPdfFlag = books.map(book => ({
+      ...book,
+      has_pdf: !!book.pdf_data,
+      external_url: book.pdf_url || null,
+      pdf_data: undefined,
+      is_admin: book.is_admin === 1
+    }));
+    res.json(booksWithPdfFlag);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/books/:id', async (req, res) => {
+  try {
+    const book = await db.get('SELECT * FROM books WHERE id = ?', req.params.id);
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+    book.has_pdf = !!book.pdf_data;
+    book.external_url = book.pdf_url || null;
+    delete book.pdf_data;
+    res.json(book);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/books', requiresAdmin, async (req, res) => {
+  try {
+    const { title, author, category, price, cover, description, stock, pdf_data, pdf_url } = req.body;
+
+    if (!title || !author) {
+      return res.status(400).json({ error: 'Title and author are required' });
+    }
+
+    let pdfBuffer = null;
+    if (pdf_data) {
+      const base64Data = pdf_data.includes(',') ? pdf_data.split(',')[1] : pdf_data;
+      pdfBuffer = Buffer.from(base64Data, 'base64');
+    }
+
+    const result = await db.run(
+      'INSERT INTO books (title, author, category, price, cover, description, stock, pdf_data, pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, author, category || 'Other', price || 0, cover || '📕', description || '', stock || 0, pdfBuffer, pdf_url || null]
+    );
+
+    const newBook = await db.get('SELECT * FROM books WHERE id = ?', result.lastID);
+    newBook.has_pdf = !!newBook.pdf_data || !!newBook.pdf_url;
+    delete newBook.pdf_data;
+    res.status(201).json(newBook);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/books/:id', requiresAdmin, async (req, res) => {
+  try {
+    const { title, author, category, price, cover, description, stock, pdf_data, pdf_url } = req.body;
+    const book = await db.get('SELECT * FROM books WHERE id = ?', req.params.id);
+    
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    let pdfBuffer = book.pdf_data;
+    if (pdf_data) {
+      const base64Data = pdf_data.includes(',') ? pdf_data.split(',')[1] : pdf_data;
+      pdfBuffer = Buffer.from(base64Data, 'base64');
+    }
+
+    await db.run(
+      'UPDATE books SET title = ?, author = ?, category = ?, price = ?, cover = ?, description = ?, stock = ?, pdf_data = ?, pdf_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [
+        title || book.title,
+        author || book.author,
+        category || book.category,
+        price !== undefined ? price : book.price,
+        cover || book.cover,
+        description !== undefined ? description : book.description,
+        stock !== undefined ? stock : book.stock,
+        pdfBuffer,
+        pdf_url !== undefined ? pdf_url : book.pdf_url,
+        req.params.id
+      ]
+    );
+
+    const updatedBook = await db.get('SELECT * FROM books WHERE id = ?', req.params.id);
+    updatedBook.has_pdf = !!updatedBook.pdf_data || !!updatedBook.pdf_url;
+    delete updatedBook.pdf_data;
+    res.json(updatedBook);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/books/:id', requiresAdmin, async (req, res) => {
+  try {
+    await db.run('DELETE FROM books WHERE id = ?', req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// INTERNET QIDIRUV — Project Gutenberg (Gutendex API)
+// ============================================================
+
+/// 1. Qidiruv: kitob nomi yoki kategoriya bo'yicha
+app.post('/api/books/import/search', requiresAdmin, async (req, res) => {
+  try {
+    const { query, limit = 10 } = req.body;
+    if (!query) return res.status(400).json({ error: 'query talab qilinadi' });
+
+    const url = `https://gutendex.com/books/?search=${encodeURIComponent(query)}&mime_type=application%2Fpdf`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Gutenberg API javob bermadi');
+
+    const data = await response.json();
+
+    const covers = ['📕', '📗', '📘', '📙', '📔', '📓', '📒', '📚'];
+    const books = data.results.slice(0, parseInt(limit)).map((book, i) => ({
+      title: book.title,
+      author: book.authors.length > 0 ? book.authors.map(a => a.name).join(', ') : 'Noma\'lum muallif',
+      category: book.subjects.length > 0 ? book.subjects[0].split(' -- ')[0].slice(0, 40) : 'Klassik',
+      description: book.subjects.slice(0, 3).join(', ') || 'Jahon klassik adabiyoti',
+      pdf_url: book.formats['application/pdf'] || null,
+      cover: covers[i % covers.length],
+      cover_img: book.formats['image/jpeg'] || null,
+      gutenberg_id: book.id,
+      languages: book.languages
+    })).filter(b => b.pdf_url);
+
+    res.json({ books, total: data.count, query });
+  } catch (error) {
+    res.status(500).json({ error: 'Qidiruvda xato: ' + error.message });
+  }
+});
+
+/// 2. Import: tanlangan kitoblarni bazaga qo'shish
+app.post('/api/books/import/do', requiresAdmin, async (req, res) => {
+  try {
+    const { books } = req.body;
+    if (!books || !Array.isArray(books)) return res.status(400).json({ error: 'books array talab qilinadi' });
+
+    const imported = [];
+    for (const book of books) {
+      const result = await db.run(
+        'INSERT INTO books (title, author, category, price, cover, description, stock, pdf_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [book.title, book.author, book.category || 'Klassik', 0, book.cover || '📕', book.description || '', 999, book.pdf_url]
+      );
+      imported.push({ ...book, id: result.lastID });
+    }
+
+    res.json({ count: imported.length, books: imported });
+  } catch (error) {
+    res.status(500).json({ error: 'Import xatosi: ' + error.message });
+  }
+});
+
+// PDF Download
+app.get('/api/books/:id/pdf', async (req, res) => {
+  try {
+    const book = await db.get('SELECT title, pdf_data, pdf_url FROM books WHERE id = ?', req.params.id);
+    if (!book || (!book.pdf_data && !book.pdf_url)) {
+      return res.status(404).json({ error: 'PDF not available for this book' });
+    }
+    if (book.pdf_url && !book.pdf_data) {
+      return res.status(404).json({ error: 'PDF not available' });
+    }
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${book.title}.pdf"`);
+    res.send(book.pdf_data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Categories Routes
+app.get('/api/categories', async (req, res) => {
+  try {
+    const categories = await db.all('SELECT * FROM categories');
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/categories', requiresAdmin, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Category name is required' });
+    }
+
+    const existing = await db.get('SELECT * FROM categories WHERE name = ?', name);
+    if (existing) {
+      return res.status(409).json({ error: 'Category already exists' });
+    }
+
+    const result = await db.run('INSERT INTO categories (name) VALUES (?)', name);
+    const newCategory = await db.get('SELECT * FROM categories WHERE id = ?', result.lastID);
+    res.status(201).json(newCategory);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/categories/:id', requiresAdmin, async (req, res) => {
+  try {
+    const key = req.params.id;
+    if (/^\d+$/.test(key)) {
+      await db.run('DELETE FROM categories WHERE id = ?', key);
+    } else {
+      await db.run('DELETE FROM categories WHERE name = ?', decodeURIComponent(key));
+    }
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Users Routes
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await db.all('SELECT id, username, email, full_name, is_admin, created_at FROM users');
+    res.json(users.map(u => ({ ...u, is_admin: u.is_admin === 1 })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await db.get('SELECT id, username, email, full_name, is_admin, created_at FROM users WHERE id = ?', req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.is_admin = user.is_admin === 1;
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/users', requiresAdmin, async (req, res) => {
+  try {
+    const { username, email, password, full_name, is_admin } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Username, email, and password are required' });
+    }
+
+    const result = await db.run(
+      'INSERT INTO users (username, email, password, full_name, is_admin) VALUES (?, ?, ?, ?, ?)',
+      [username, email, password, full_name || '', is_admin ? 1 : 0]
+    );
+
+    const newUser = await db.get('SELECT id, username, email, full_name, is_admin, created_at FROM users WHERE id = ?', result.lastID);
+    newUser.is_admin = newUser.is_admin === 1;
+    res.status(201).json(newUser);
+  } catch (error) {
+    if (error.message.includes('UNIQUE')) {
+      return res.status(409).json({ error: 'Username or email already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/users/:id', requiresAdmin, async (req, res) => {
+  try {
+    const { full_name, is_admin } = req.body;
+    await db.run(
+      'UPDATE users SET full_name = ?, is_admin = ? WHERE id = ?',
+      [full_name, is_admin ? 1 : 0, req.params.id]
+    );
+
+    const updatedUser = await db.get('SELECT id, username, email, full_name, is_admin, created_at FROM users WHERE id = ?', req.params.id);
+    updatedUser.is_admin = updatedUser.is_admin === 1;
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/users/:id', requiresAdmin, async (req, res) => {
+  try {
+    await db.run('DELETE FROM users WHERE id = ?', req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Orders Routes
+app.get('/api/orders', async (req, res) => {
+  try {
+    const userId = req.query.user_id;
+    let orders;
+    
+    if (userId) {
+      orders = await db.all('SELECT * FROM orders WHERE user_id = ?', userId);
+    } else {
+      orders = await db.all('SELECT * FROM orders');
+    }
+
+    // Get order items for each order
+    for (let order of orders) {
+      const items = await db.all(`
+        SELECT oi.*, b.title as book_title 
+        FROM order_items oi 
+        LEFT JOIN books b ON oi.book_id = b.id 
+        WHERE oi.order_id = ?
+      `, order.id);
+      order.items = items;
+    }
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/orders/:id', async (req, res) => {
+  try {
+    const order = await db.get('SELECT * FROM orders WHERE id = ?', req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const items = await db.all(`
+      SELECT oi.*, b.title as book_title 
+      FROM order_items oi 
+      LEFT JOIN books b ON oi.book_id = b.id 
+      WHERE oi.order_id = ?
+    `, order.id);
+    order.items = items;
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { user_id, items } = req.body;
+
+    if (!user_id || !items || items.length === 0) {
+      return res.status(400).json({ error: 'user_id and items are required' });
+    }
+
+    // Check if user exists
+    const user = await db.get('SELECT * FROM users WHERE id = ?', user_id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let total = 0;
+
+    // Validate stock and calculate total
+    for (const item of items) {
+      const book = await db.get('SELECT * FROM books WHERE id = ?', item.book_id);
+      if (!book) {
+        return res.status(404).json({ error: `Book with id ${item.book_id} not found` });
+      }
+      if (book.stock < item.quantity) {
+        return res.status(400).json({ error: `Not enough stock for ${book.title}` });
+      }
+      total += book.price * item.quantity;
+    }
+
+    // Create order
+    const orderResult = await db.run(
+      'INSERT INTO orders (user_id, total_amount) VALUES (?, ?)',
+      [user_id, total]
+    );
+
+    // Add order items and update stock
+    for (const item of items) {
+      const book = await db.get('SELECT * FROM books WHERE id = ?', item.book_id);
+      await db.run(
+        'INSERT INTO order_items (order_id, book_id, quantity, price) VALUES (?, ?, ?, ?)',
+        [orderResult.lastID, item.book_id, item.quantity, book.price]
+      );
+      await db.run(
+        'UPDATE books SET stock = stock - ? WHERE id = ?',
+        [item.quantity, item.book_id]
+      );
+    }
+
+    const newOrder = await db.get('SELECT * FROM orders WHERE id = ?', orderResult.lastID);
+    const orderItems = await db.all(`
+      SELECT oi.*, b.title as book_title 
+      FROM order_items oi 
+      LEFT JOIN books b ON oi.book_id = b.id 
+      WHERE oi.order_id = ?
+    `, orderResult.lastID);
+    newOrder.items = orderItems;
+
+    res.status(201).json(newOrder);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/orders/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    await db.run(
+      'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [status, req.params.id]
+    );
+
+    const updatedOrder = await db.get('SELECT * FROM orders WHERE id = ?', req.params.id);
+    const items = await db.all(`
+      SELECT oi.*, b.title as book_title 
+      FROM order_items oi 
+      LEFT JOIN books b ON oi.book_id = b.id 
+      WHERE oi.order_id = ?
+    `, req.params.id);
+    updatedOrder.items = items;
+
+    res.json(updatedOrder);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/orders/:id', async (req, res) => {
+  try {
+    // Restore stock
+    const items = await db.all('SELECT * FROM order_items WHERE order_id = ?', req.params.id);
+    for (const item of items) {
+      await db.run('UPDATE books SET stock = stock + ? WHERE id = ?', [item.quantity, item.book_id]);
+    }
+
+    await db.run('DELETE FROM orders WHERE id = ?', req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Analytics Routes
+app.post('/api/analytics/session', async (req, res) => {
+  try {
+    const { user_id, session_id, device_type, browser, os, country } = req.body;
+    const result = await db.run(
+      'INSERT INTO user_sessions (user_id, session_id, ip_address, user_agent, device_type, browser, os, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [user_id, session_id, req.ip, req.headers['user-agent'], device_type, browser, os, country]
+    );
+    const session = await db.get('SELECT * FROM user_sessions WHERE id = ?', result.lastID);
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/analytics/pageview', async (req, res) => {
+  try {
+    const { session_id, user_id, page_url, page_title, referrer, time_spent } = req.body;
+    const result = await db.run(
+      'INSERT INTO page_views (session_id, user_id, page_url, page_title, referrer, time_spent) VALUES (?, ?, ?, ?, ?, ?)',
+      [session_id, user_id, page_url, page_title, referrer, time_spent || 0]
+    );
+    const pageview = await db.get('SELECT * FROM page_views WHERE id = ?', result.lastID);
+    res.status(201).json(pageview);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/analytics/bookview', async (req, res) => {
+  try {
+    const { book_id, user_id, session_id, pages_read, time_spent, completed } = req.body;
+    const result = await db.run(
+      'INSERT INTO book_views (book_id, user_id, session_id, pages_read, time_spent, completed) VALUES (?, ?, ?, ?, ?, ?)',
+      [book_id, user_id, session_id, pages_read || 0, time_spent || 0, completed ? 1 : 0]
+    );
+    const bookview = await db.get('SELECT * FROM book_views WHERE id = ?', result.lastID);
+    res.status(201).json(bookview);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/analytics/user/:id', requiresAdmin, async (req, res) => {
+  try {
+    const user = await db.get(
+      'SELECT id, username, email, full_name, is_admin, created_at FROM users WHERE id = ?',
+      req.params.id
+    );
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const sessions = await db.all(
+      'SELECT * FROM user_sessions WHERE user_id = ? ORDER BY started_at DESC LIMIT 20',
+      req.params.id
+    );
+    const bookviews = await db.all(
+      'SELECT * FROM book_views WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+      req.params.id
+    );
+
+    res.json({ user, sessions, bookviews });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/analytics/dashboard', requiresAdmin, async (req, res) => {
+  try {
+    const totalUsers = await db.get('SELECT COUNT(*) as count FROM users');
+    const totalBooks = await db.get('SELECT COUNT(*) as count FROM books');
+    const totalOrders = await db.get('SELECT COUNT(*) as count FROM orders');
+    const totalSessions = await db.get('SELECT COUNT(*) as count FROM user_sessions');
+
+    // Active sessions (last 30 minutes)
+    const activeSessions = await db.get(`
+      SELECT COUNT(*) as count FROM user_sessions 
+      WHERE datetime(started_at) >= datetime('now', '-30 minutes') AND is_active = 1
+    `);
+
+    // Most viewed books
+    const popularBooks = await db.all(`
+      SELECT b.id, b.title, b.cover, COUNT(bv.id) as views
+      FROM books b
+      LEFT JOIN book_views bv ON b.id = bv.book_id
+      GROUP BY b.id
+      ORDER BY views DESC
+      LIMIT 10
+    `);
+
+    // Device stats
+    const deviceStats = await db.all(`
+      SELECT device_type as device, COUNT(*) as count
+      FROM user_sessions
+      GROUP BY device_type
+    `);
+
+    // Recent sessions
+    const recentSessions = await db.all(`
+      SELECT * FROM user_sessions
+      ORDER BY started_at DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      total_users: totalUsers.count,
+      total_books: totalBooks.count,
+      total_orders: totalOrders.count,
+      total_sessions: totalSessions.count,
+      active_sessions: activeSessions.count,
+      popular_books: popularBooks,
+      device_stats: deviceStats,
+      recent_sessions: recentSessions
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin login
+app.post('/api/admin/login', (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password && password === ADMIN_PASSWORD) {
+      return res.json({ token: ADMIN_PASSWORD });
+    }
+    res.status(401).json({ error: 'Invalid password' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================
+// AI ENDPOINTS (Gemini)
+// ============================================================
+
+// AI Summary — kitob haqida qisqacha xulosa
+app.post('/api/ai/summary', async (req, res) => {
+  const { title, author, category, description } = req.body;
+  if (!title) return res.status(400).json({ error: 'Kitob nomi kerak' });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({ error: 'Gemini API key sozlanmagan' });
+  }
+  try {
+    const prompt = `Sen O'zbek tilida javob beradigan kutubxona yordamchisisan.
+Quyidagi kitob haqida qisqacha ma'lumot ber:
+
+Kitob nomi: ${title}
+Muallif: ${author || 'Noma\'lum'}
+Janr: ${category || 'Noma\'lum'}
+Tavsif: ${description || 'Mavjud emas'}
+
+Quyidagi formatda javob ber (O'zbek tilida):
+**Qisqacha xulosa:** (2-3 jumla)
+**Asosiy mavzular:** (3 ta bullet point)
+**Kim uchun mos:** (1 jumla)
+**Baho:** (5 dan nechi yulduz va sababi)`;
+
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text();
+    res.json({ summary: text });
+  } catch (err) {
+    console.error('Gemini summary error:', err.message);
+    res.status(500).json({ error: 'AI xizmatida xatolik: ' + err.message });
+  }
+});
+
+// AI Chat — kitob bilan suhbat
+app.post('/api/ai/chat', async (req, res) => {
+  const { message, bookTitle, bookAuthor, bookDescription, history } = req.body;
+  if (!message) return res.status(400).json({ error: 'Xabar kerak' });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({ error: 'Gemini API key sozlanmagan' });
+  }
+  try {
+    const bookContext = bookTitle
+      ? `Kitob: "${bookTitle}" — ${bookAuthor || ''}. ${bookDescription || ''}`
+      : 'Umumiy adabiyot haqida suhbat.';
+
+    const historyText = (history || [])
+      .slice(-6)
+      .map(h => `${h.role === 'user' ? 'Foydalanuvchi' : 'AI'}: ${h.text}`)
+      .join('\n');
+
+    const prompt = `Sen kutubxona AI yordamchisisisan. O'zbek tilida javob berasan.
+${bookContext}
+
+${historyText ? 'Oldingi suhbat:\n' + historyText + '\n' : ''}
+Foydalanuvchi: ${message}
+AI:`;
+
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text();
+    res.json({ reply: text });
+  } catch (err) {
+    console.error('Gemini chat error:', err.message);
+    res.status(500).json({ error: 'AI xizmatida xatolik: ' + err.message });
+  }
+});
+
+// AI Recommendation — kayfiyat/maqsad bo'yicha tavsiya
+app.post('/api/ai/recommend', async (req, res) => {
+  const { mood, level, goal, books } = req.body;
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_api_key_here') {
+    return res.status(503).json({ error: 'Gemini API key sozlanmagan' });
+  }
+  try {
+    const bookList = (books || []).slice(0, 30)
+      .map(b => `- "${b.title}" (${b.author}, ${b.category})`)
+      .join('\n');
+
+    const prompt = `Sen kitob tavsiya qiluvchi AI assistantsan. O'zbek tilida javob ber.
+
+Foydalanuvchi haqida:
+- Kayfiyat: ${mood || 'noma\'lum'}
+- Daraja: ${level || 'o\'rta'}
+- Maqsad: ${goal || 'o\'qish'}
+
+Mavjud kitoblar:
+${bookList}
+
+Yuqoridagi kitoblar ichidan ENG MOS 3 tasini tanlа va quyidagi JSON formatida qaytаr:
+{
+  "recommendations": [
+    {"title": "kitob nomi", "reason": "nега mos (1 jumla)"},
+    {"title": "kitob nomi", "reason": "nега mos (1 jumla)"},
+    {"title": "kitob nomi", "reason": "nега mos (1 jumla)"}
+  ],
+  "message": "foydalanuvchiga umumiy tavsiya xabari (1-2 jumla)"
+}
+Faqat JSON qaytаr, boshqa hech narsa yozma.`;
+
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('AI JSON qaytarmadi');
+    const data = JSON.parse(jsonMatch[0]);
+    res.json(data);
+  } catch (err) {
+    console.error('Gemini recommend error:', err.message);
+    res.status(500).json({ error: 'AI xizmatida xatolik: ' + err.message });
+  }
+});
+
+// AI Smart Search
+app.post('/api/ai/search', async (req, res) => {
+  const { query, books } = req.body;
+  if (!query) return res.status(400).json({ error: 'Qidiruv so\'zi kerak' });
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_api_key_here') {
+    return res.status(503).json({ error: 'Gemini API key sozlanmagan' });
+  }
+  try {
+    const bookList = (books || []).slice(0, 40)
+      .map((b, i) => `${i + 1}. "${b.title}" — ${b.author} (${b.category})`)
+      .join('\n');
+
+    const prompt = `Sen kutubxona qidiruv assistantisan. O'zbek tilida javob ber.
+
+Foydalanuvchi qidiruvi: "${query}"
+
+Kitoblar ro'yxati:
+${bookList}
+
+Qidiruv so'ziga ENG MOS 5 ta kitob nomini quyidagi JSON formatida qaytаr:
+{"results": ["kitob nomi 1", "kitob nomi 2", "kitob nomi 3", "kitob nomi 4", "kitob nomi 5"]}
+Faqat JSON qaytаr.`;
+
+    const result = await geminiModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('AI JSON qaytarmadi');
+    const data = JSON.parse(jsonMatch[0]);
+    res.json(data);
+  } catch (err) {
+    console.error('Gemini search error:', err.message);
+    res.status(500).json({ error: 'AI xizmatida xatolik: ' + err.message });
+  }
+});
+
+// Error handlers
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Server error' });
+});
+
+// Error handlers
+app.use((req, res) => { res.status(404).json({ error: "Not found" }); });
+app.use((err, req, res, next) => { console.error(err.stack); res.status(500).json({ error: "Server error" }); });
+
+// Start server
+initDatabase().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✅ Node.js server is running on http://localhost:${PORT}`);
+    console.log(`📚 API endpoints available at http://localhost:${PORT}/api`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
+});

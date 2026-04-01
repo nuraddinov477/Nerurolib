@@ -1,0 +1,607 @@
+.navbar {
+  background: #ffffff;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 0.85rem 0;
+  height: 64px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 0 #e2e8f0, 0 2px 12px rgba(37,99,235,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  animation: slideDown 0.5s cubic-bezier(0.22,1,0.36,1);
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.navbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2563eb, #3b82f6, #60a5fa, #3b82f6, #2563eb);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 2rem;
+}
+
+/* Search */
+.nav-search-form {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+
+.nav-search-input {
+  width: 100%;
+  padding: 0.5rem 2.2rem 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1.5px solid rgba(210,170,80,0.25);
+  background: rgba(255,255,255,0.07);
+  color: #f2e8d5;
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.nav-search-input::placeholder { color: rgba(242,232,213,0.45); }
+
+.nav-search-input:focus {
+  border-color: #c8720a;
+  background: rgba(255,255,255,0.11);
+}
+
+.nav-search-clear {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.nav-logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  font-family: 'Playfair Display', Georgia, serif;
+  color: #1e40af;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.nav-logo:hover {
+  transform: scale(1.05);
+  color: #2563eb;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  color: #374151;
+  text-decoration: none;
+  font-weight: 500;
+  font-family: 'Lora', Georgia, serif;
+  transition: all 0.2s ease;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  position: relative;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: #2563eb;
+  transition: width 0.25s ease;
+  border-radius: 2px;
+}
+
+.nav-link:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.nav-link:hover::before {
+  width: 60%;
+}
+
+.nav-ai {
+  color: #fff !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-radius: 20px;
+  padding: 0.4rem 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+
+.nav-ai:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.nav-fav {
+  color: #2563eb !important;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+  padding: 0.4rem 0.9rem;
+}
+
+.nav-link:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.admin-link {
+  background-color: rgba(220, 53, 69, 0.15);
+  border: 1px solid rgba(220, 53, 69, 0.4);
+  color: #ff6b6b !important;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.admin-link:hover {
+  background-color: #ef4444;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* ===== Animatsiyali tema toggle ===== */
+.theme-toggle-btn {
+  position: relative;
+  width: 54px;
+  height: 28px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  padding: 3px;
+  background: linear-gradient(135deg, #0d1220, #0a0e1a);
+  transition: background 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.45s ease,
+              box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.theme-toggle-btn.is-light {
+  background: linear-gradient(135deg, #c2dcf7, #e0f0ff);
+  border-color: #90caf9;
+  justify-content: flex-start;
+}
+
+.toggle-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.theme-toggle-btn.is-dark .toggle-thumb {
+  background: linear-gradient(135deg, #b0b8d0, #8090b0);
+  color: #0a0e1a;
+  box-shadow: 0 0 10px rgba(160, 176, 210, 0.45),
+              inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.theme-toggle-btn.is-light .toggle-thumb {
+  background: linear-gradient(135deg, #ffe066, #ffaa00);
+  color: #7a4d00;
+  box-shadow: 0 0 12px rgba(255, 190, 0, 0.55),
+              inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.08);
+}
+
+.theme-toggle-btn.is-dark:hover {
+  border-color: rgba(160, 176, 210, 0.5);
+  box-shadow: 0 0 16px rgba(96, 130, 200, 0.2);
+}
+
+.theme-toggle-btn.is-light:hover {
+  border-color: #64b5f6;
+  box-shadow: 0 0 16px rgba(255, 190, 0, 0.25);
+}
+
+.cart-link {
+  background-color: rgba(232, 160, 64, 0.12);
+  border: 1px solid rgba(232, 160, 64, 0.3);
+  color: #e8a040 !important;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+  position: relative;
+}
+
+.cart-link:hover {
+  background: linear-gradient(135deg, #c8720a, #8b4010);
+  color: #fdf6e3 !important;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(200, 114, 10, 0.45);
+  transform: translateY(-2px);
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-name {
+  color: #e7e7e7;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.user-name:hover {
+  background-color: rgba(255, 147, 69, 0.12);
+  color: #ff9345;
+}
+
+.logout-btn {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ff6b6b;
+  padding: 0.5rem 1rem;
+}
+
+.logout-btn:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.login-btn {
+  background: linear-gradient(135deg, #ff9345, #f12711);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.login-btn:hover {
+  background: linear-gradient(135deg, #f12711, #ff9345);
+  box-shadow: 0 4px 16px rgba(255, 147, 69, 0.4);
+}
+
+.language-selector {
+  position: relative;
+}
+
+.language-menu {
+  position: relative;
+}
+
+.language-btn {
+  color: #e0d4bc;
+  text-decoration: none;
+  font-weight: 500;
+  font-family: 'Lora', serif;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background-color: rgba(210, 170, 80, 0.08);
+  border: 1px solid rgba(210, 170, 80, 0.18);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.language-btn:hover {
+  background-color: rgba(232, 160, 64, 0.14);
+  border-color: rgba(232, 160, 64, 0.35);
+  color: #e8a040;
+}
+
+.language-options {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: rgba(22, 18, 10, 0.98);
+  border: 1px solid rgba(210, 170, 80, 0.18);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  min-width: 150px;
+  z-index: 1000;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.65);
+  backdrop-filter: blur(20px);
+  margin-top: 0.5rem;
+}
+
+.language-options button {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 500;
+  font-family: 'Lora', serif;
+  color: var(--text-primary);
+  transition: all 0.3s;
+}
+
+.language-options button:hover {
+  background-color: rgba(232, 160, 64, 0.12);
+  color: #e8a040;
+}
+
+.language-options button.active {
+  background: linear-gradient(135deg, #c8720a, #8b4010);
+  color: #fdf6e3;
+}
+
+.login-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-modal {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--shadow);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.login-modal h2 {
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-option-btn {
+  padding: 1rem;
+  border: 2px solid rgba(255, 147, 69, 0.4);
+  background-color: rgba(255, 147, 69, 0.08);
+  color: #ff9345;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.login-option-btn:hover {
+  background: linear-gradient(135deg, #ff9345, #f12711);
+  border-color: transparent;
+  color: white;
+}
+
+.login-option-btn.admin {
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+.login-option-btn.admin:hover {
+  background-color: #ffc107;
+  color: black;
+}
+
+.close-modal-btn {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.close-modal-btn:hover {
+  background-color: #5a6268;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-menu {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .login-modal {
+    width: 95%;
+    padding: 1.5rem;
+  }
+}
+
+/* =========================================================
+   KUNDUZGI REJIM (light)
+   ========================================================= */
+
+/* =========================================================
+   KUNDUZGI REJIM NAVBAR — ziyo.uz uslubi
+   ========================================================= */
+
+body[data-theme="dark"] .navbar {
+  background: #0f172a;
+  border-bottom: 1px solid rgba(59,130,246,0.15);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+}
+
+body[data-theme="dark"] .navbar::after {
+  background: linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa, #3b82f6, #1d4ed8);
+}
+
+body[data-theme="dark"] .nav-logo {
+  color: #93c5fd;
+}
+
+body[data-theme="dark"] .nav-logo:hover {
+  color: #60a5fa;
+}
+
+body[data-theme="dark"] .nav-link {
+  color: #cbd5e1;
+}
+
+body[data-theme="dark"] .nav-link:hover {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+
+body[data-theme="dark"] .nav-fav {
+  color: #93c5fd !important;
+  background: rgba(59,130,246,0.12);
+  border-color: rgba(59,130,246,0.3);
+}
+
+/* theme-toggle-btn light mode overrides handled via .is-light class */
+
+body[data-theme="light"] .language-btn {
+  background: rgba(245, 234, 208, 0.8);
+  border-color: #ddc9a0;
+  color: #5c3d20;
+}
+
+body[data-theme="light"] .language-btn:hover {
+  background: rgba(184, 114, 10, 0.10);
+  color: #b8720a;
+  border-color: rgba(184, 114, 10, 0.30);
+}
+
+body[data-theme="light"] .language-options {
+  background: #fffdf6;
+  border: 1px solid #ddc9a0;
+  box-shadow: 0 8px 28px rgba(100,70,30,0.14);
+}
+
+body[data-theme="light"] .language-options button {
+  color: #5c3d20;
+}
+
+body[data-theme="light"] .language-options button:hover {
+  background: rgba(184, 114, 10, 0.10);
+  color: #b8720a;
+}
+
+body[data-theme="light"] .language-options button.active {
+  background: linear-gradient(135deg, #c8720a, #8b4010);
+  color: #fdf6e3;
+}
+
+body[data-theme="light"] .admin-link {
+  background-color: rgba(139, 34, 82, 0.08);
+  border-color: rgba(139, 34, 82, 0.25);
+  color: #8b2252 !important;
+}
+
+/* =========================================================
+   TUNGI REJIM (dark) — asosan :root dan meros oladi
+   ========================================================= */
+
+body[data-theme="dark"] .language-options {
+  background: rgba(15, 12, 7, 0.98);
+  border: 1px solid rgba(210, 170, 80, 0.18);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+}
+
+body[data-theme="dark"] .login-modal {
+  background: rgba(22, 18, 10, 0.98);
+  border: 1px solid rgba(210, 170, 80, 0.22);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+}
+
+body[data-theme="dark"] .login-option-btn {
+  background: rgba(30, 25, 15, 0.9);
+  border-color: rgba(232, 160, 64, 0.28);
+  color: var(--text-primary);
+}
+
+body[data-theme="dark"] .login-option-btn:hover {
+  background: rgba(232, 160, 64, 0.14);
+  border-color: var(--accent-1);
+}
+
+body[data-theme="dark"] .close-modal-btn {
+  background: rgba(70, 55, 35, 0.5);
+  border: 1px solid rgba(210,170,80,0.15);
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060c1a" id="meta-theme-color" />
+    <meta
+      name="description"
+      content="Neurolib - Onlayn kutubxona"
+    />
+    <title>Neurolib – Onlayn kutubxona</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>📚</text></svg>">
+  </head>
+  <body>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('darkMode');
+          var isDark;
+          if (stored !== null) {
+            isDark = stored === 'true';
+          } else {
+            isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          var theme = isDark ? 'dark' : 'light';
+          document.body.setAttribute('data-theme', theme);
+          var meta = document.getElementById('meta-theme-color');
+          if (meta) meta.setAttribute('content', isDark ? '#0f172a' : '#ffffff');
+        } catch (e) {}
+      })();
+    </script>
+    <noscript>Bu ilovani ishlatish uchun JavaScript yoqilgan bo'lishi kerak.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

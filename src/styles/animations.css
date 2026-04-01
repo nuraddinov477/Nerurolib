@@ -1,0 +1,610 @@
+/* ============================================================
+   ANIMATIONS.CSS — Premium Visual Animations
+   Neurolib Bookstore
+   ============================================================ */
+
+/* ========================
+   1. PAGE TRANSITIONS
+   ======================== */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-transition {
+  animation: pageFadeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ========================
+   2. SCROLL REVEAL
+   ======================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.visible       { opacity: 1; transform: translateY(0); }
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-left.visible  { opacity: 1; transform: translateX(0); }
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.88);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+/* Stagger delays */
+.delay-1  { transition-delay: 0.08s; }
+.delay-2  { transition-delay: 0.16s; }
+.delay-3  { transition-delay: 0.24s; }
+.delay-4  { transition-delay: 0.32s; }
+.delay-5  { transition-delay: 0.40s; }
+.delay-6  { transition-delay: 0.48s; }
+
+/* ========================
+   3. FLOATING PARTICLES
+   ======================== */
+@keyframes floatParticle {
+  0%   { transform: translateY(0)     rotate(0deg);   opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.7; }
+  100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
+}
+
+.particles-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  bottom: -20px;
+  border-radius: 50%;
+  background: rgba(255, 147, 69, 0.35);
+  animation: floatParticle linear infinite;
+}
+
+.particle:nth-child(1)  { left:  4%; width:4px;  height:4px;  animation-duration:13s; animation-delay:0s; }
+.particle:nth-child(2)  { left: 11%; width:6px;  height:6px;  animation-duration:19s; animation-delay:2s; }
+.particle:nth-child(3)  { left: 18%; width:3px;  height:3px;  animation-duration:15s; animation-delay:4s; }
+.particle:nth-child(4)  { left: 27%; width:5px;  height:5px;  animation-duration:17s; animation-delay:1s; }
+.particle:nth-child(5)  { left: 36%; width:4px;  height:4px;  animation-duration:21s; animation-delay:3s; }
+.particle:nth-child(6)  { left: 45%; width:7px;  height:7px;  animation-duration:14s; animation-delay:5s; }
+.particle:nth-child(7)  { left: 54%; width:4px;  height:4px;  animation-duration:16s; animation-delay:0.5s; }
+.particle:nth-child(8)  { left: 63%; width:5px;  height:5px;  animation-duration:18s; animation-delay:2.5s; }
+.particle:nth-child(9)  { left: 74%; width:3px;  height:3px;  animation-duration:20s; animation-delay:1.5s; }
+.particle:nth-child(10) { left: 83%; width:6px;  height:6px;  animation-duration:12s; animation-delay:3.5s; }
+.particle:nth-child(11) { left: 91%; width:4px;  height:4px;  animation-duration:16s; animation-delay:0.8s; }
+.particle:nth-child(12) { left: 97%; width:5px;  height:5px;  animation-duration:14s; animation-delay:4.5s; }
+
+/* ========================
+   4. HERO ORB BACKGROUNDS
+   ======================== */
+@keyframes orbFloat1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(30px,-25px) scale(1.08); }
+  66%     { transform: translate(-20px,15px) scale(0.95); }
+}
+@keyframes orbFloat2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(-35px,20px) scale(0.92); }
+  66%     { transform: translate(25px,-12px) scale(1.08); }
+}
+@keyframes orbFloat3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(15px,25px) scale(1.05); }
+}
+
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+  opacity: 0.18;
+  z-index: 0;
+}
+.hero-orb-1 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #ff9345, #f12711);
+  top: -120px; right: -100px;
+  animation: orbFloat1 9s ease-in-out infinite;
+}
+.hero-orb-2 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, #f5af19, #ff6b35);
+  bottom: -90px; left: -80px;
+  animation: orbFloat2 11s ease-in-out infinite;
+}
+.hero-orb-3 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, #ff9345, #f5af19);
+  top: 40%; left: 40%;
+  animation: orbFloat3 7s ease-in-out infinite;
+  opacity: 0.09;
+}
+
+/* ========================
+   5. CARD EFFECTS
+   ======================== */
+
+/* Shine sweep on hover */
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+.card-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.card-shine:hover::after {
+  transform: translateX(200%) skewX(-15deg);
+}
+
+/* 3D tilt */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s ease;
+}
+.card-3d:hover {
+  transform: perspective(900px) rotateX(4deg) rotateY(-5deg) translateY(-8px);
+  box-shadow: 12px 20px 50px rgba(0,0,0,0.45),
+              0 0 24px rgba(255, 147, 69, 0.18);
+}
+
+/* Gradient border pulse */
+@keyframes borderPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255, 147, 69, 0.3); }
+  50%     { box-shadow: 0 0 0 4px rgba(255, 147, 69, 0.1); }
+}
+.card-border-pulse:hover {
+  animation: borderPulse 2s ease-in-out infinite;
+}
+
+/* ========================
+   6. STAGGERED GRID ENTRY
+   ======================== */
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.stagger-grid > * {
+  opacity: 0;
+  animation: staggerIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.stagger-grid > *:nth-child(1)  { animation-delay: 0.04s; }
+.stagger-grid > *:nth-child(2)  { animation-delay: 0.08s; }
+.stagger-grid > *:nth-child(3)  { animation-delay: 0.12s; }
+.stagger-grid > *:nth-child(4)  { animation-delay: 0.16s; }
+.stagger-grid > *:nth-child(5)  { animation-delay: 0.20s; }
+.stagger-grid > *:nth-child(6)  { animation-delay: 0.24s; }
+.stagger-grid > *:nth-child(7)  { animation-delay: 0.28s; }
+.stagger-grid > *:nth-child(8)  { animation-delay: 0.32s; }
+.stagger-grid > *:nth-child(9)  { animation-delay: 0.36s; }
+.stagger-grid > *:nth-child(10) { animation-delay: 0.40s; }
+.stagger-grid > *:nth-child(n+11) { animation-delay: 0.44s; }
+
+/* ========================
+   7. GRADIENT ANIMATED TEXT
+   ======================== */
+@keyframes gradientShift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ff9345, #f12711, #f5af19, #ff6b6b, #ff9345);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease infinite;
+}
+
+/* ========================
+   8. GLOW PULSE
+   ======================== */
+@keyframes glowPulse {
+  0%,100% {
+    box-shadow: 0 0 8px rgba(255,147,69,0.2), 0 0 16px rgba(255,147,69,0.1);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255,147,69,0.5), 0 0 48px rgba(255,147,69,0.2);
+  }
+}
+.glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+
+/* ========================
+   9. BUTTON RIPPLE
+   ======================== */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  background: rgba(255,255,255,0.28);
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+  transition: width 0.55s ease, height 0.55s ease, opacity 0.55s ease;
+  pointer-events: none;
+}
+.btn-ripple:active::before {
+  width: 320px; height: 320px; opacity: 0;
+}
+
+/* ========================
+   10. LOADING SPINNER
+   ======================== */
+@keyframes spin  { to { transform: rotate(360deg);  } }
+@keyframes spinR { to { transform: rotate(-360deg); } }
+
+.spinner {
+  display: inline-block;
+  position: relative;
+  width: 48px; height: 48px;
+}
+.spinner::before, .spinner::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid transparent;
+}
+.spinner::before {
+  inset: 0;
+  border-top-color: #ff9345;
+  animation: spin 0.75s linear infinite;
+}
+.spinner::after {
+  inset: 8px;
+  border-bottom-color: #f5af19;
+  animation: spinR 0.55s linear infinite;
+}
+
+/* ========================
+   11. TOP PROGRESS BAR
+   ======================== */
+@keyframes topProgress {
+  0%   { width: 0%;   opacity: 1; }
+  80%  { width: 88%;  opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+.top-loader {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, #ff9345, #f12711, #f5af19);
+  box-shadow: 0 0 10px rgba(255,147,69,0.6);
+  z-index: 9999;
+  animation: topProgress 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ========================
+   12. BOOK COVER FLOAT
+   ======================== */
+@keyframes bookFloat {
+  0%,100% { transform: translateY(0)    rotate(-1.5deg); }
+  50%     { transform: translateY(-12px) rotate(1.5deg); }
+}
+.book-emoji-float {
+  display: inline-block;
+  animation: bookFloat 4s ease-in-out infinite;
+}
+
+/* ========================
+   13. SCROLL INDICATOR
+   ======================== */
+@keyframes scrollDot {
+  0%,100% { transform: translateY(0); opacity: 1; }
+  50%     { transform: translateY(8px); opacity: 0.4; }
+}
+.scroll-indicator {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 42px;
+  border: 2px solid rgba(255,147,69,0.45);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  padding-top: 7px;
+  cursor: pointer;
+}
+.scroll-indicator::after {
+  content: '';
+  width: 4px; height: 9px;
+  background: #ff9345;
+  border-radius: 2px;
+  animation: scrollDot 2s ease-in-out infinite;
+}
+
+/* ========================
+   14. BADGE PULSE
+   ======================== */
+@keyframes badgeBounce {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.25); }
+}
+.badge-pulse { animation: badgeBounce 1.4s ease-in-out infinite; }
+
+/* ========================
+   15. NOTIFICATION SHAKE
+   ======================== */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-6px); }
+  40%     { transform: translateX(6px); }
+  60%     { transform: translateX(-4px); }
+  80%     { transform: translateX(4px); }
+}
+.shake { animation: shake 0.5s ease-in-out; }
+
+/* ========================
+   16. SKELETON LOADING
+   ======================== */
+@keyframes skeletonShimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card-bg)           25%,
+    rgba(255,147,69,0.07)    50%,
+    var(--card-bg)           75%
+  );
+  background-size: 600px 100%;
+  animation: skeletonShimmer 1.6s infinite linear;
+  border-radius: 8px;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+/* ========================
+   17. ACTIVE NAV INDICATOR
+   ======================== */
+@keyframes navIndicator {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.nav-link.active-page::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, #ff9345, #f12711);
+  border-radius: 1px;
+  transform: scaleX(0);
+  animation: navIndicator 0.3s cubic-bezier(0.22,1,0.36,1) forwards;
+  transform-origin: left;
+}
+
+/* ========================
+   18. HOVER SCALE SMOOTH
+   ======================== */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1),
+              box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+}
+
+/* ========================
+   19. FOCUS RING
+   ======================== */
+:focus-visible {
+  outline: 2px solid #ff9345;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ========================
+   20. SMOOTH SCROLLBAR
+   ======================== */
+::-webkit-scrollbar          { width: 8px; height: 8px; }
+::-webkit-scrollbar-track    { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb    {
+  background: linear-gradient(180deg, #ff9345, #f12711);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: #ff9345; }
+
+/* ========================
+   21. GLASS CARD
+   ======================== */
+.glass-card {
+  background: var(--glass-bg, rgba(20,18,16,0.8));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ========================
+   22. COUNTER NUMBER ANIMATION
+   ======================== */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.count-animate {
+  animation: countUp 0.6s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+/* ========================
+   23. IMAGE ZOOM ON HOVER
+   ======================== */
+.img-zoom {
+  overflow: hidden;
+  border-radius: inherit;
+}
+.img-zoom img, .img-zoom .book-cover-large {
+  transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+}
+.img-zoom:hover img,
+.img-zoom:hover .book-cover-large {
+  transform: scale(1.08);
+}
+
+/* ========================
+   24. PRICE TAG PULSE
+   ======================== */
+@keyframes pricePulse {
+  0%,100% { text-shadow: 0 0 0 transparent; }
+  50%     { text-shadow: 0 0 12px rgba(245,175,25,0.5); }
+}
+.price-animate {
+  animation: pricePulse 3s ease-in-out infinite;
+}
+
+/* ========================
+   25. TOOLTIP FADE
+   ======================== */
+.tooltip-wrap { position: relative; }
+.tooltip-wrap .tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(20,18,16,0.95);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  border: 1px solid rgba(255,147,69,0.3);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 99;
+}
+.tooltip-wrap:hover .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ========================
+   26. DARK MODE TOGGLE SPIN
+   ======================== */
+@keyframes toggleSpin {
+  from { transform: rotate(0deg) scale(0.8); opacity: 0; }
+  to   { transform: rotate(360deg) scale(1);  opacity: 1; }
+}
+.dark-mode-btn:active {
+  animation: toggleSpin 0.4s ease forwards;
+}
+
+/* ========================
+   27. HERO TITLE APPEAR
+   ======================== */
+@keyframes heroTitleIn {
+  0%   { opacity: 0; transform: translateY(-20px) scale(0.97); filter: blur(6px); }
+  100% { opacity: 1; transform: translateY(0)     scale(1);    filter: blur(0); }
+}
+.hero-title-animate {
+  animation: heroTitleIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ========================
+   28. FILTER BUTTON ACTIVE GLOW
+   ======================== */
+@keyframes filterGlow {
+  0%,100% { box-shadow: 0 0 0   0    rgba(245,175,25,0); }
+  50%     { box-shadow: 0 0 14px 2px rgba(245,175,25,0.35); }
+}
+.filter-btn.active {
+  animation: filterGlow 2.5s ease-in-out infinite;
+}
+
+/* ========================
+   29. CART ITEM SLIDE IN
+   ======================== */
+@keyframes cartItemIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.cart-item-animate {
+  animation: cartItemIn 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+/* ========================
+   30. FOOTER FADE UP
+   ======================== */
+@keyframes footerUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+footer {
+  animation: footerUp 0.8s cubic-bezier(0.22,1,0.36,1) forwards;
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+/* ========================
+   31. TEMA SILLIQ O'TISH
+   ======================== */
+body,
+.navbar,
+.hero,
+.books-hero,
+.book-item,
+.book-card,
+.feature-card,
+.category-item,
+.testimonial-card,
+.mission-card,
+.mission-section,
+.stats,
+.language-options,
+.filter-btn,
+.search-box input,
+.card-bg,
+footer {
+  transition:
+    background     0.35s ease,
+    background-color 0.35s ease,
+    border-color   0.35s ease,
+    box-shadow     0.35s ease,
+    color          0.35s ease !important;
+}
