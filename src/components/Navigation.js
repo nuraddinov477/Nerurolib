@@ -39,7 +39,7 @@ function Navigation() {
     applyTheme(newMode);
   };
 
-  React.useEffect(() => { applyTheme(darkMode); }, []);
+  React.useEffect(() => { applyTheme(darkMode); }, [darkMode]);
 
   React.useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');

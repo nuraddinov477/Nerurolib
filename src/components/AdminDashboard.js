@@ -101,7 +101,6 @@ export default function AdminDashboard({ onNavigate }) {
   const revTrend30  = days30.map(() => Math.floor(Math.random() * 300000 + 50000));
 
   const trendData   = range === 'week' ? revTrend7 : revTrend30;
-  const trendLabels = range === 'week' ? days7 : days30.filter((_, i) => i % 5 === 0);
 
   const todayUsers = Math.floor((data?.total_users || 0) * 0.08);
   const totalRevenue = (data?.total_orders || 0) * 89000;

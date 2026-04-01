@@ -6,14 +6,14 @@ import '../styles/AdminAnalytics.css';
 function AdminAnalytics() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [userDetails, setUserDetails] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null); // eslint-disable-line no-unused-vars
+  const [userDetails, setUserDetails] = useState(null); // eslint-disable-line no-unused-vars
 
   useEffect(() => {
     fetchAnalytics();
     const interval = setInterval(fetchAnalytics, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAnalytics = async () => {
     try {
@@ -35,7 +35,7 @@ function AdminAnalytics() {
     // Get data from localStorage
     const savedBooks = localStorage.getItem('books');
     const savedOrders = localStorage.getItem('orders');
-    const savedCart = localStorage.getItem('cart');
+    
 
     const books = savedBooks ? JSON.parse(savedBooks) : [];
     const orders = savedOrders ? JSON.parse(savedOrders) : [];
