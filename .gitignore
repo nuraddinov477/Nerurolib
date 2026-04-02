@@ -7,7 +7,6 @@ __pycache__/
 env/
 venv/
 ENV/
-build/
 develop-eggs/
 dist/
 downloads/
@@ -36,7 +35,7 @@ yarn-error.log*
 /.pnp
 .pnp.js
 /coverage
-/build
+# /build
 .env
 .env.local
 .env.development.local
