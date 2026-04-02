@@ -16,11 +16,11 @@ const aiRouter = require('./routes/ai');
 const settingsRouter = require('./routes/settings');
 
 const app = express();
-const PORT = process.env.NODE_PORT || 3001;
+const PORT = process.env.PORT || process.env.NODE_PORT || 3001;
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : (process.env.NODE_ENV === 'production' ? false : '*');
+  : '*';
 
 app.use(helmet({
   contentSecurityPolicy: {
